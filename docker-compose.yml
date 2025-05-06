@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  mysql-database:
+    image: mysql:8.0
+    container_name: mysql-database
+    env_file:
+      - .env
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - todo-network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  to-do-app:
+    build: .
+    container_name: todo-application
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql-database:
+        condition: service_healthy
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    name: todo-mysql-data
+
+networks:
+  todo-network:
+    name: todo-network
+    driver: bridge
